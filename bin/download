@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+current_script_path=${BASH_SOURCE[0]}
+plugin_dir=$(dirname "$(dirname "$current_script_path")")
+
+# shellcheck source=./lib/utils.bash
+source "${plugin_dir}/lib/utils.bash"
+
+mkdir -p "$ASDF_DOWNLOAD_PATH"
+
+# Detect OS and architecture for filename
+os=$(uname -s | tr '[:upper:]' '[:lower:]')
+arch=$(uname -m)
+
+case "$os" in
+darwin)
+	case "$arch" in
+	arm64) arch_suffix="arm64" ;;
+	x86_64) arch_suffix="amd64" ;;
+	*) fail "Unsupported macOS architecture: $arch" ;;
+	esac
+	os_suffix="macOS"
+	archive_ext="zip"
+	;;
+linux)
+	case "$arch" in
+	x86_64) arch_suffix="amd64" ;;
+	*) fail "Unsupported Linux architecture: $arch" ;;
+	esac
+	os_suffix="linux"
+	archive_ext="zip"
+	;;
+*)
+	fail "Unsupported operating system: $os"
+	;;
+esac
+
+release_file="$ASDF_DOWNLOAD_PATH/gh.${archive_ext}"
+
+# Download archive file to the download directory
+download_release "$ASDF_INSTALL_VERSION" "$release_file"
+
+# Extract contents of archive file into the download directory
+if [[ "$archive_ext" == "zip" ]]; then
+	unzip -q "$release_file" -d "$ASDF_DOWNLOAD_PATH" || fail "Could not extract $release_file"
+else
+	tar -xzf "$release_file" -C "$ASDF_DOWNLOAD_PATH" || fail "Could not extract $release_file"
+fi
+
+# Remove the archive file since we don't need to keep it
+rm "$release_file"

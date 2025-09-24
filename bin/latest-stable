@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+current_script_path=${BASH_SOURCE[0]}
+plugin_dir=$(dirname "$(dirname "$current_script_path")")
+
+# shellcheck source=./lib/utils.bash
+. "${plugin_dir}/lib/utils.bash"
+
+curl_opts=(-s)
+
+if [ -n "${GITHUB_API_TOKEN:-}" ]; then
+	curl_opts=("${curl_opts[@]}" -H "Authorization: token $GITHUB_API_TOKEN")
+fi
+
+# Get latest stable release from GitHub API
+latest_url="https://api.github.com/repos/cli/cli/releases/latest"
+latest_version=$(curl "${curl_opts[@]}" "$latest_url" | grep -o '"tag_name": "v[^"]*"' | sed 's/"tag_name": "v//g' | sed 's/"//g')
+
+printf "%s\n" "$latest_version"
