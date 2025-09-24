@@ -16,3 +16,5 @@ jobs:
       - uses: GoogleCloudPlatform/release-please-action@v4
         with:
           release-type: simple
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
